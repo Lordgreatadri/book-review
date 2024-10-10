@@ -1,0 +1,1 @@
+This is a simple REST API built in Python FastAPI with PostgreSQL for book review web service
