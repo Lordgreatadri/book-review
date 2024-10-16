@@ -42,7 +42,7 @@ class UserService(object):
         await session.commit()
         return user
 
-
+    
     async def authenticate_user(self, username: str, password: str, session: AsyncSession):
         user = await self.get_user_by_username(username, session)
         if not user:
