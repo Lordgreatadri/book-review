@@ -56,10 +56,6 @@ def verify_access_token(token: str)-> dict:
         logging.error(f"Invalid access token: {invalidErr}")
         # return {"error": "Invalid token"}
         return None
-    except jwt.InvalidKeyError as invalidKeyErr:
-        logging.error(f"Invalid secret key: {invalidKeyErr}")
-        # return {"error": "Invalid secret key"}
-        return None
     except jwt.JWTError as jwtError:
         logging.error(f"An error occurred while decoding access token: {jwtError}")
         # return {"error": "An error occurred while decoding access token"}
@@ -68,3 +64,5 @@ def verify_access_token(token: str)-> dict:
         logging.error(f"An error occurred while verifying access token: {e}")
         # return {"error": "An error occurred while verifying access token"}
         return None
+    
+    
