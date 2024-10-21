@@ -2,13 +2,13 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from fastapi.responses import JSONResponse
-from .models import User
 from .schemas import CreateUserModel, UserModel,UserLoginModel
 from src.db.main import get_session
 from .services import UserService
 from .utils import create_access_token, verify_access_token
-from datetime import timedelta
+from datetime import timedelta, datetime
 from src.config import Config
+from .dependencies import RefereshTokenBearer
 
 auth_router = APIRouter()
 user_service = UserService()
@@ -71,3 +71,24 @@ async def login(user: UserLoginModel, session: Session = Depends(get_session)):
     )
 
 
+
+@auth_router.get('/generate_access_token', status_code=status.HTTP_200_OK)
+async def generate_access_token(token_details:dict = Depends(RefereshTokenBearer())):
+    expiry_time = token_details['exp']
+
+    if datetime.fromtimestamp(expiry_time) > datetime.now():
+        new_access_token = create_access_token({
+            "email": token_details['email'],
+            "user_uuid": token_details['user_uuid']
+        })
+
+        return JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "access_token": new_access_token['access_token'],
+                "token_type": "bearer",
+                "message": "Access token refreshed successfully"
+            }
+        )
+    
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token or token expired")
