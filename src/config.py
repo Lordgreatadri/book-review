@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     jwt_algorithm: str
     access_token_expire_minutes: int
     refresh_token_expire_minutes: int
+    redis_host: str = "localhost"
+    redis_port: int = 6379,
+    jti_expiry: int = 3000
 
     model_config = SettingsConfigDict(
         env_file = ".env",

@@ -1,6 +1,7 @@
 from fastapi import HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from .utils import verify_access_token
+from .utils import decode_access_token
+from src.db.redis import token_in_blocklist
 
 
 class TokenBearer(HTTPBearer):
@@ -11,12 +12,32 @@ class TokenBearer(HTTPBearer):
 
     async def __call__(self, request: Request) -> HTTPAuthorizationCredentials | None:
         token = await super().__call__(request)
+
+        # decode token 
+        token_data = decode_access_token(token.credentials)
         
         if not self.is_valid_token(token.credentials):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Token not valid")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail={
+                    "status_code":status.HTTP_403_FORBIDDEN,
+                    "error":"Token is invalid or expired",
+                    "resolution":"Please create a new token"
+                }
+            )
         
-        # Verify token 
-        token_data = verify_access_token(token.credentials)
+        
+        #check if token is in the blocklist
+        if await token_in_blocklist(token_data['jti']):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, 
+                detail={
+                    "status_code":status.HTTP_403_FORBIDDEN,
+                    "error":"Token is either revoked or invalid",
+                    "resolution":"Please create a new token"
+                    }
+                )
+
 
         # print(token.credentials)
         self.verify_token_data(token_data)
@@ -25,7 +46,7 @@ class TokenBearer(HTTPBearer):
  
     
     def is_valid_token(self, token: str)-> bool:
-        token_data = verify_access_token(token)
+        token_data = decode_access_token(token)
 
         # return True if token_data is not None else False
         return token_data is not None
@@ -42,7 +63,10 @@ class AccessTokenBearer(TokenBearer):
         if token_data and token_data['refresh']:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, 
-                detail="Please provide a valid access_token"
+                detail={
+                    "status_code":status.HTTP_403_FORBIDDEN,
+                    "error":"Please provide a valid access_token"
+                    }
             )
 
 
@@ -56,5 +80,8 @@ class RefereshTokenBearer(TokenBearer):
         if token_data and not token_data['refresh']:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN, 
-                detail="Please provide a valid refresh_token"
+                detail={
+                    "status_code":status.HTTP_403_FORBIDDEN,
+                    "error":"Please provide a valid refresh_token"
+                    }
             )
