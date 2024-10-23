@@ -17,14 +17,14 @@ class UserService(object):
         result = await session.execute(statement)
         user = result.scalars().first()
 
-        return True if user is not None else False
+        return user if user is not None else False
     
     async def get_user_by_phone_number(self, phone_number: str, session: AsyncSession):
         statement = select(User).where(User.phone_number == phone_number)
         result = await session.execute(statement)
         user = result.scalars().first()
 
-        return True if user is not None else False
+        return user if user is not None else False
 
     async def user_exists(self, username: str, email:str, session: AsyncSession):
         statement = select(User).where(User.username == username).where(User.email == email)

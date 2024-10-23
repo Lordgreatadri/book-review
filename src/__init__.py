@@ -22,7 +22,7 @@ app = FastAPI(
     title="Book Review",
     description="A REST API for book review web service",
     version = version,
-    lifespan=life_span
+    # lifespan=life_span
 )
 
 app.include_router(auth_router, prefix=f"/api/{version}/auth", tags=["authentication"])

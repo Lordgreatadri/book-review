@@ -3,18 +3,21 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from typing import Optional, List
 from src.books.schemas import Book, BookUpdateModel, BookCreateModel, BookResponseModel
-from src.auth.dependencies import AccessTokenBearer
+from src.auth.dependencies import AccessTokenBearer, RoleChecker
 from src.db.main import get_session
 from .service import BookService
+from src.config import Config
+
+
 
 router = APIRouter()
 
 book_service = BookService()
 
 access_token_bearer = AccessTokenBearer()
+role_checker = Depends(RoleChecker(Config.roles))
 
-
-@router.get('/', response_model=List[BookResponseModel])
+@router.get('/', response_model=List[BookResponseModel], dependencies=[role_checker])
 async def get_books(
     session: AsyncSession = Depends(get_session),
     current_user = Depends(access_token_bearer)
@@ -24,7 +27,7 @@ async def get_books(
 
 
 
-@router.post("/", status_code=status.HTTP_201_CREATED, response_model=Book)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=Book, dependencies=[role_checker])
 async def create_book(
     data : BookCreateModel, 
     session: AsyncSession = Depends(get_session),
@@ -37,7 +40,7 @@ async def create_book(
     return book
 
 
-@router.get("/{book_uid}", response_model=Optional[BookResponseModel])
+@router.get("/{book_uid}", response_model=Optional[BookResponseModel], dependencies=[role_checker])
 async def get_book(
         book_uid: str, 
         session: AsyncSession = Depends(get_session),
@@ -50,7 +53,7 @@ async def get_book(
     return book
 
 
-@router.put("/{book_uid}", response_model=BookResponseModel)
+@router.put("/{book_uid}", response_model=BookResponseModel, dependencies=[role_checker])
 async def update_book(
         book_uid: str, 
         data: BookUpdateModel, 
@@ -64,7 +67,7 @@ async def update_book(
     return book
 
 
-@router.delete("/{book_uid}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{book_uid}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[role_checker])
 async def delete_book(
         book_uid: str, 
         session: AsyncSession = Depends(get_session),

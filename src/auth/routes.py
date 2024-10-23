@@ -8,10 +8,13 @@ from .services import UserService
 from .utils import create_access_token
 from datetime import timedelta, datetime
 from src.config import Config
-from .dependencies import RefereshTokenBearer, AccessTokenBearer
+from .dependencies import RefereshTokenBearer, AccessTokenBearer, get_current_user, RoleChecker
 from src.db.redis import add_jti_to_blocklist
+
+
 auth_router = APIRouter()
 user_service = UserService()
+role_checker = RoleChecker(Config.roles)
 
 @auth_router.post("/register", response_model=UserModel, status_code=status.HTTP_201_CREATED)
 async def create_user(user: CreateUserModel, session = Depends(get_session)):
@@ -47,7 +50,8 @@ async def login(user: UserLoginModel, session: Session = Depends(get_session)):
     
     access_token = create_access_token({
         "email": user.email,
-        "user_uuid": str(user.uid)
+        "user_uuid": str(user.uid),
+        "role": user.role,
     })#,timedelta(minutes=30)
 
 
@@ -66,6 +70,7 @@ async def login(user: UserLoginModel, session: Session = Depends(get_session)):
                 "user_uuid": str(user.uid),
                 "phone_number": user.phone_number,
                 "name": user.first_name +" "+user.last_name,
+                "role": user.role,
                 "is_verified":user.is_verified
             },
             "access_token": access_token['access_token'],
@@ -98,6 +103,12 @@ async def generate_access_token(token_details:dict = Depends(RefereshTokenBearer
         )
     
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token or token expired")
+
+
+
+@auth_router.get("/user")
+async def get_user(user:dict = Depends(get_current_user), _:bool = Depends(role_checker)):
+    return user
 
 
 
