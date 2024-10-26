@@ -106,7 +106,7 @@ async def generate_access_token(token_details:dict = Depends(RefereshTokenBearer
 
 
 
-@auth_router.get("/user")
+@auth_router.get("/user", response_model=UserModel)
 async def get_user(user:dict = Depends(get_current_user), _:bool = Depends(role_checker)):
     return user
 

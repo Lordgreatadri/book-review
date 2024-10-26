@@ -9,6 +9,7 @@ class Book(BaseModel):
     publisher: str
     publication_date: date
     page_count: int
+    user_uid:uuid.UUID = None
     created_at: datetime
     updated_at: datetime
 
@@ -21,6 +22,7 @@ class BookResponseModel(BaseModel):
     publisher: str
     publication_date: date
     page_count: int
+    user_uid:uuid.UUID = None
     created_at: datetime
     updated_at: datetime
 

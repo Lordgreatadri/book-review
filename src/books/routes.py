@@ -20,7 +20,7 @@ role_checker = Depends(RoleChecker(Config.roles))
 @router.get('/', response_model=List[BookResponseModel], dependencies=[role_checker])
 async def get_books(
     session: AsyncSession = Depends(get_session),
-    current_user = Depends(access_token_bearer)
+    token_details: dict = Depends(access_token_bearer)
 ) :
     books = await book_service.get_all_books(session)
     return books
@@ -31,9 +31,14 @@ async def get_books(
 async def create_book(
     data : BookCreateModel, 
     session: AsyncSession = Depends(get_session),
-    current_user = Depends(access_token_bearer)
+    token_details: dict = Depends(access_token_bearer)
 ) ->dict:
-    book = await book_service.create_book(data, session)
+    print(token_details)
+    user_uid = token_details['user_uuid']
+    # data['user_uid']= user_uid
+
+
+    book = await book_service.create_book(data, user_uid, session)
     if not book:
        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="There was an error creating a new book")  
 
@@ -44,13 +49,33 @@ async def create_book(
 async def get_book(
         book_uid: str, 
         session: AsyncSession = Depends(get_session),
-        current_user = Depends(access_token_bearer)
+        token_details: dict = Depends(access_token_bearer)
     ):
     book = await book_service.get_book(book_uid, session)
 
     if not book:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="The specified book not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The specified book with {book_uid} not found.")
     return book
+
+
+
+@router.get("/user/{user_uid}", response_model=List[BookResponseModel], dependencies=[role_checker])
+async def get_user_books(
+    user_uid: str, 
+    session: AsyncSession = Depends(get_session),
+    token_details: dict = Depends(access_token_bearer)
+) :
+    books = await book_service.get_user_books(user_uid,session)
+
+    if not books:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=
+        {
+            "status_code": status.HTTP_404_NOT_FOUND,
+            "message": f"No books found for user with UID: {user_uid}"
+        }
+        )
+    return books
+
 
 
 @router.put("/{book_uid}", response_model=BookResponseModel, dependencies=[role_checker])
@@ -58,7 +83,7 @@ async def update_book(
         book_uid: str, 
         data: BookUpdateModel, 
         session: AsyncSession = Depends(get_session),
-        current_user = Depends(access_token_bearer)
+        token_details: dict = Depends(access_token_bearer)
         ):
     book = await book_service.update_book(book_uid, data, session)
     if not book:
@@ -71,7 +96,7 @@ async def update_book(
 async def delete_book(
         book_uid: str, 
         session: AsyncSession = Depends(get_session),
-        current_user = Depends(access_token_bearer)
+        token_details: dict = Depends(access_token_bearer)
     ):
     book = await book_service.delete_book(book_uid, session)
     if book is None:
