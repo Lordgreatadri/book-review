@@ -8,8 +8,8 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 from alembic import context
 
 #Let't import all the user defined Models here
-from src.books.models import Book
-from src.auth.models import User
+from src.db.models import Book
+from src.db.models import User
 from sqlmodel import SQLModel
 #### let's import our config object
 from src.config import Config

@@ -6,7 +6,7 @@ from .utils import decode_access_token
 from src.db.redis import token_in_blocklist
 from src.db.main import get_session
 from . services import UserService
-from . models import User
+from src.db.models import User
 
 
 

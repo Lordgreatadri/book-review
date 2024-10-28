@@ -2,7 +2,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from fastapi.responses import JSONResponse
-from .schemas import CreateUserModel, UserModel,UserLoginModel
+from .schemas import CreateUserModel, UserModel,UserLoginModel, UserBooksModel
 from src.db.main import get_session
 from .services import UserService
 from .utils import create_access_token
@@ -106,7 +106,7 @@ async def generate_access_token(token_details:dict = Depends(RefereshTokenBearer
 
 
 
-@auth_router.get("/user", response_model=UserModel)
+@auth_router.get("/user", response_model=UserBooksModel)
 async def get_user(user:dict = Depends(get_current_user), _:bool = Depends(role_checker)):
     return user
 
