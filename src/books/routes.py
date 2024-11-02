@@ -2,7 +2,7 @@ from fastapi import APIRouter, status, Depends, Request
 from fastapi.exceptions import HTTPException
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from typing import Optional, List
-from src.books.schemas import Book, BookUpdateModel, BookCreateModel, BookResponseModel
+from src.books.schemas import Book, BookDetailsModel, BookUpdateModel, BookCreateModel, BookResponseModel
 from src.auth.dependencies import AccessTokenBearer, RoleChecker
 from src.db.main import get_session
 from .service import BookService
@@ -45,7 +45,7 @@ async def create_book(
     return book
 
 
-@router.get("/{book_uid}", response_model=Optional[BookResponseModel], dependencies=[role_checker])
+@router.get("/{book_uid}", response_model=Optional[BookDetailsModel], dependencies=[role_checker])
 async def get_book(
         book_uid: str, 
         session: AsyncSession = Depends(get_session),
