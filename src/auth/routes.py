@@ -10,6 +10,16 @@ from datetime import timedelta, datetime
 from src.config import Config
 from .dependencies import RefereshTokenBearer, AccessTokenBearer, get_current_user, RoleChecker
 from src.db.redis import add_jti_to_blocklist
+from src.exceptions.errors import (
+    UserPhoneNumberAlreadyExists,
+    UserEmailAlreadyExists,
+    InvalidUserCredentials,
+    NewResourceServerError,
+    UsernameAlreadyExists,
+    UserAlreadyExists,
+    InvalidToken,
+    UserNotFound
+) 
 
 
 auth_router = APIRouter()
@@ -19,34 +29,36 @@ role_checker = RoleChecker(Config.roles)
 @auth_router.post("/register", response_model=UserModel, status_code=status.HTTP_201_CREATED)
 async def create_user(user: CreateUserModel, session = Depends(get_session)):
     if await user_service.user_exists(user.email, user.username, session=session):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User already exists")
+        raise UserAlreadyExists()
+    
 
     if await user_service.get_user_by_email(user.email, session):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email already registered")
+        raise UserEmailAlreadyExists()
     
+
     if await user_service.get_user_by_username(user.username, session):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Username already registered")
+        raise UsernameAlreadyExists()
+    
+    
     
     if await user_service.get_user_by_phone_number(user.phone_number, session):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Phone number already registered")
+        raise UserPhoneNumberAlreadyExists()
     
+
     new_user = await user_service.create_user(user, session)
 
     if new_user:
         return new_user
     
-    raise HTTPException(status_code=500, detail={
-        "status_code": status.HTTP_500,
-        "error":"An error occurred while creating the user"
-        }
-        )
+    raise NewResourceServerError()
 
 
 @auth_router.post('/login', status_code=status.HTTP_200_OK)
 async def login(user: UserLoginModel, session: Session = Depends(get_session)):
     user = await user_service.authenticate_user(user.username, user.password, session)
     if not user:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid credentials")
+        raise InvalidUserCredentials()
+    
     
     access_token = create_access_token({
         "email": user.email,
@@ -102,7 +114,7 @@ async def generate_access_token(token_details:dict = Depends(RefereshTokenBearer
             }
         )
     
-    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid token or token expired")
+    raise InvalidToken()
 
 
 

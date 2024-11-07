@@ -7,6 +7,11 @@ from src.auth.dependencies import AccessTokenBearer, RoleChecker
 from src.db.main import get_session
 from .service import BookService
 from src.config import Config
+from src.exceptions.errors import (
+    SpecifiedResourceNotFound,
+    NewResourceServerError,
+    BookNotFound
+) 
 
 
 
@@ -40,7 +45,8 @@ async def create_book(
 
     book = await book_service.create_book(data, user_uid, session)
     if not book:
-       raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="There was an error creating a new book")  
+       raise NewResourceServerError()
+    
 
     return book
 
@@ -54,7 +60,8 @@ async def get_book(
     book = await book_service.get_book(book_uid, session)
 
     if not book:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The specified book with {book_uid} not found.")
+        raise BookNotFound()
+    
     return book
 
 
@@ -68,12 +75,8 @@ async def get_user_books(
     books = await book_service.get_user_books(user_uid,session)
 
     if not books:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=
-        {
-            "status_code": status.HTTP_404_NOT_FOUND,
-            "message": f"No books found for user with UID: {user_uid}"
-        }
-        )
+        raise SpecifiedResourceNotFound()
+     
     return books
 
 
@@ -86,9 +89,10 @@ async def update_book(
         token_details: dict = Depends(access_token_bearer)
         ):
     book = await book_service.update_book(book_uid, data, session)
-    if not book:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="The specified book not found")
 
+    if not book:
+        raise BookNotFound()
+    
     return book
 
 
@@ -100,7 +104,7 @@ async def delete_book(
     ):
     book = await book_service.delete_book(book_uid, session)
     if book is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="The specified book not found")
+        raise BookNotFound()
 
     return {"detail": "Book deleted"}
 

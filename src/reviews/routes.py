@@ -5,6 +5,9 @@ from src.db.main import get_session
 from src.auth.dependencies import get_current_user
 from .schemas import ReviewModel,CreateReviewModel
 from .services import ReviewService
+from src.exceptions.errors import (
+    NewResourceServerError
+) 
 
 review_router = APIRouter()
 review_service = ReviewService()
@@ -24,10 +27,6 @@ async def create_book_review(
         )
 
     if not review:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={
-            "status_code": status.HTTP_500_INTERNAL_SERVER_ERROR,
-            "message":"An error occurred while creating new review"
-            }
-        )
+        raise NewResourceServerError()
      
     return review

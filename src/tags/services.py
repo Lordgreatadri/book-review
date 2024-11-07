@@ -2,12 +2,17 @@ from fastapi import status
 from fastapi.exceptions import HTTPException
 from sqlmodel import desc, select
 from sqlmodel.ext.asyncio.session import AsyncSession
-
 from src.books.service import BookService
 from src.db.models import Tag
-
 from .schemas import TagAddModel, TagCreateModel
-# from src.errors import BookNotFound, TagNotFound, TagAlreadyExists
+# from src.errors import BookNotFound, TagNotFound, 
+from src.exceptions.errors import (
+    TagAlreadyExists,
+    TagNotFound,
+    BookNotFound
+) 
+
+
 
 book_service = BookService()
 
@@ -37,13 +42,7 @@ class TagService:
         book = await book_service.get_book(book_uid=book_uid, session=session)
 
         if not book:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={
-                        "status_code":status.HTTP_404_NOT_FOUND,
-                        "message":f"Book with ID '{book_uid}' not found."
-                    }
-                )
+            raise BookNotFound()
 
         for tag_item in tag_data.tags:
             result = await session.execute(select(Tag).where(Tag.name == tag_item.name))
@@ -53,6 +52,7 @@ class TagService:
                 tag = Tag(name=tag_item.name)
 
             book.tags.append(tag)
+
         session.add(book)
         await session.commit()
         await session.refresh(book)
@@ -86,13 +86,8 @@ class TagService:
         tag = result.first()
 
         if tag:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail={
-                        "status_code":status.HTTP_400_BAD_REQUEST,
-                        "message":f"Tag already exists"
-                    }
-                )
+            raise TagAlreadyExists()
+        
         new_tag = Tag(name=tag_data.name)
 
         session.add(new_tag)
@@ -116,13 +111,7 @@ class TagService:
         tag = await self.get_tag_by_uid(tag_uid, session)
 
         if not tag:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail={
-                        "status_code":status.HTTP_404_NOT_FOUND,
-                        "message":f"Tag with id {tag_uid} not found"
-                    }
-                )
+            raise TagNotFound()
 
         update_data_dict = tag_update_data.model_dump()
 
@@ -147,13 +136,7 @@ class TagService:
         tag = self.get_tag_by_uid(tag_uid,session)
 
         if not tag:
-            raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND, 
-                    detail={
-                        "status_code":status.HTTP_404_NOT_FOUND,
-                        "message":f"Tag with id {tag_uid} not found"
-                    }
-                )
+            raise TagNotFound()
 
         await session.delete(tag)
 
