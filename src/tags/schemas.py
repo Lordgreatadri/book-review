@@ -10,6 +10,9 @@ class TagModel(BaseModel):
     name: str
     created_at: datetime
 
+    class Config:
+        orm_mode = True
+
 
 class TagCreateModel(BaseModel):
     name: str

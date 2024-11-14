@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     redis_port: int = 6379,
     jti_expiry: int = 3000
     roles:list[str]
+    allowed_hosts:list[str]
 
     model_config = SettingsConfigDict(
         env_file = ".env",
