@@ -10,7 +10,13 @@ from src.middleware import register_middleware
 from .exceptions.errors import (
     register_all_errors
 )
+from src.config import Config
 
+from fastapi.responses import JSONResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 #to determine which code to run at the start of our application.
 @asynccontextmanager
@@ -31,6 +37,22 @@ app = FastAPI(
     version = version,
     # lifespan=life_span
 )
+
+
+# Initialize Limiter with a global rate limit
+limiter = Limiter(key_func=get_remote_address, default_limits=[Config.rate_limts])
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, lambda request, exc: JSONResponse(
+    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    content={
+        "status_code": status.HTTP_429_TOO_MANY_REQUESTS,
+        "message": "Too many requests",
+        "detail": "Rate limit exceeded. Please try again later."
+        }
+))
+
+# Add SlowAPI Middleware to apply the limiter
+app.add_middleware(SlowAPIMiddleware)
 
 
 register_all_errors(app)

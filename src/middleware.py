@@ -6,7 +6,10 @@ from fastapi import FastAPI, status
 from datetime import datetime
 import time
 
-
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 
 
 import logging
@@ -15,6 +18,11 @@ from src.config import Config
 
 logger = logging.getLogger('uvicorn.access')
 logger.disabled = True
+
+
+# Initialize the limiter with a key function (e.g., based on IP address)
+limiter = Limiter(key_func=get_remote_address)
+
 
 def register_middleware(app: FastAPI):
     # Add your middleware here
@@ -36,30 +44,19 @@ def register_middleware(app: FastAPI):
 
 
 
-    @app.middleware('http')
-    async def rate_limit(request:Request, call_next):
-        # Add your rate limiting logic here
-        # Example: Implement a simple rate limiter
-        client_ip = request.client.host
-        client_port = request.client.port
 
-        # # Check if the client has exceeded the rate limit
-        # if client_ip in Config.rate_limit_cache:
-        #     client_requests = Config.rate_limit_cache[client_ip]
-        #     if client_requests >= Config.rate_limit_per_minute:
-        #         logger.warning(f"Rate limit exceeded for {client_ip}:{client_port}")
-                
-        #         return JSONResponse(status_code=status.HTTP_429_TOO_MANY_REQUESTS, content={"status_code": status.HTTP_429_TOO_MANY_REQUESTS, "message": "Rate limit exceeded", "resolution":"Please try again later."})
-            
-
-        # # Increment the client's request count
-        # if client_ip not in Config.rate_limit_cache:
-        #     Config.rate_limit_cache[client_ip] = 1
-        # else:
-        #     Config.rate_limit_cache[client_ip] += 1
-
-
-        return await call_next(request)
+     # Custom rate limit exception handler
+    # @app.exception_handler(RateLimitExceeded)
+    # async def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    #     return JSONResponse(
+    #         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+    #         content={
+    #             "status_code": status.HTTP_429_TOO_MANY_REQUESTS,
+    #             "message": "Too many requests",
+    #             "detail": "Rate limit exceeded. Please try again later."
+    #             }
+    #     )
+ 
 
 
     @app.middleware('http')
@@ -95,16 +92,7 @@ def register_middleware(app: FastAPI):
             logger.warning(f"Invalid authorization header in request from {request.client.host}:{request.client.port}")
             return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"status_code": status.HTTP_401_UNAUTHORIZED, "message": "Invalid authorization header", "resolution":"Bearer token is required"})
         
-        bearer_token = authorization_header.split(" ")[1]
-        
-        # Validate the bearer token with your authorization logic
-        # Example: Check if the bearer token is valid and has access to the API
 
-        # If the token is valid, continue with the request
-        # If the token is invalid, return a 401 Unauthorized response
-        # If the token is revoked, return a 401 Unauthorized response
-        
-        # If the token is valid, continue with the request
         response = await call_next(request)
         return response
 
@@ -120,7 +108,13 @@ def register_middleware(app: FastAPI):
     )
 
 
-    app.add_middleware(
-        TrustedHostMiddleware,
-        allowed_hosts=Config.allowed_hosts
-    )
+    # app.add_middleware(
+    #     TrustedHostMiddleware,
+    #     allowed_hosts=Config.allowed_hosts
+    # )
+
+
+
+    # Add SlowAPI middleware for rate limiting
+    # app.state.limiter = limiter
+    # app.add_middleware(SlowAPIMiddleware)

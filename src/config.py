@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     jti_expiry: int = 3000
     roles:list[str]
     allowed_hosts:list[str]
+    rate_limts: str = "15/minute"
 
     model_config = SettingsConfigDict(
         env_file = ".env",

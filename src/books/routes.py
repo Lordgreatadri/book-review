@@ -12,7 +12,7 @@ from src.exceptions.errors import (
     NewResourceServerError,
     BookNotFound
 ) 
-
+# from src.middleware import limiter
 
 
 router = APIRouter()
@@ -22,8 +22,11 @@ book_service = BookService()
 access_token_bearer = AccessTokenBearer()
 role_checker = Depends(RoleChecker(Config.roles))
 
+
 @router.get('/', response_model=List[BookResponseModel], dependencies=[role_checker])
+# @limiter.limit("1/second")
 async def get_books(
+    request: Request,
     session: AsyncSession = Depends(get_session),
     token_details: dict = Depends(access_token_bearer)
 ) :
