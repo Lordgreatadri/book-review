@@ -1,8 +1,9 @@
+import smtplib
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from fastapi.responses import JSONResponse
-from .schemas import CreateUserModel, UserModel,UserLoginModel, UserBooksModel
+from .schemas import CreateUserModel, EmailModel, UserModel,UserLoginModel, UserBooksModel
 from src.db.main import get_session
 from .services import UserService
 from .utils import create_access_token
@@ -20,6 +21,8 @@ from src.exceptions.errors import (
     InvalidToken,
     UserNotFound
 ) 
+
+from src.mails.mail import mail, create_message
 
 
 auth_router = APIRouter()
@@ -135,4 +138,39 @@ async def revoke_token(token_detail:dict =Depends(AccessTokenBearer())):
             "message": "Logged out successfully"
             }
         )
+
+
+@auth_router.post('/send-mail')
+async def send_mail(email:EmailModel):
+
+    try:
+        server = smtplib.SMTP(Config.mail_host, Config.mail_port)
+        server.starttls()
+        server.login(Config.mail_username, Config.mail_password)
+
+        print("Connection successful!")
+
+        server.quit()
+
+        emails = email.email_addresses
+
+        html = "<h1>Welcome to the app</h1>"
+        subject = "Welcome to our site!"
+
+        message = create_message(
+            recipients= emails,
+            subject= subject,
+            body= html
+        )
+
+        await mail.send_message(message)
+
+        return {"message": "Email sent successfully"} 
+
+    except Exception as e:
+        print("Failed to connect:", e)
+
+        return e
+
+    
 

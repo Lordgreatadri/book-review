@@ -79,22 +79,22 @@ def register_middleware(app: FastAPI):
 
 
 
-    @app.middleware('http')
-    async def authorization(request: Request, call_next):
-        if not "Authorization" in request.headers:
-            logger.warning(f"Authorization header not found in request from {request.client.host}:{request.client.port}")
+    # @app.middleware('http')
+    # async def authorization(request: Request, call_next):
+    #     # if not "Authorization" in request.headers:
+    #     #     logger.warning(f"Authorization header not found in request from {request.client.host}:{request.client.port}")
 
 
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"status_code": status.HTTP_401_UNAUTHORIZED, "message": "Authorization header not set", "resolution":"Provide credentials to proceed."})
+    #     #     return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"status_code": status.HTTP_401_UNAUTHORIZED, "message": "Authorization header not set", "resolution":"Provide credentials to proceed."})
         
-        authorization_header = request.headers.get("Authorization")
-        if not authorization_header.startswith("Bearer "):
-            logger.warning(f"Invalid authorization header in request from {request.client.host}:{request.client.port}")
-            return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"status_code": status.HTTP_401_UNAUTHORIZED, "message": "Invalid authorization header", "resolution":"Bearer token is required"})
+    #     authorization_header = request.headers.get("Authorization")
+    #     if not authorization_header.startswith("Bearer "):
+    #         logger.warning(f"Invalid authorization header in request from {request.client.host}:{request.client.port}")
+    #         return JSONResponse(status_code=status.HTTP_401_UNAUTHORIZED, content={"status_code": status.HTTP_401_UNAUTHORIZED, "message": "Invalid authorization header", "resolution":"Bearer token is required"})
         
 
-        response = await call_next(request)
-        return response
+    #     response = await call_next(request)
+    #     return response
 
 
  
