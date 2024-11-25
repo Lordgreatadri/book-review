@@ -52,3 +52,19 @@ class UserService(object):
             return False
         
         return user
+    
+
+
+    async def update_user(self, user_email: str, user_data: dict, session: AsyncSession):
+        user_to_update = await self.get_user_by_email(user_email, session)
+        if not user_to_update:
+            return None
+        
+        for key, value in user_data.items():
+            setattr(user_to_update, key, value)
+
+        await session.commit()
+        await session.refresh(user_to_update)
+
+        return user_to_update
+

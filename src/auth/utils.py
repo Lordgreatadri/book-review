@@ -1,5 +1,6 @@
 from passlib.context import CryptContext
 from datetime import datetime, timedelta
+from itsdangerous import URLSafeTimedSerializer
 from src.config import Config
 import jwt # Make sure this is the PyJWT package
 import uuid
@@ -7,6 +8,9 @@ import logging
 
 #define password encryption algorithm
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+serializer = URLSafeTimedSerializer(secret_key=Config.jwt_secret_key, salt=Config.salt)
+        
 
 
 #pip install python-jose[cryptography]     => old way but still works#-
@@ -65,4 +69,22 @@ def decode_access_token(token: str)-> dict:
         # return {"error": "An error occurred while verifying access token"}
         return None
     
+
+
+
+def create_url_safe_token(data:dict):
+    
+    token = serializer.dumps(data)
+
+    return token 
+
+
+def decode_url_safe_token(token: str):
+    try:
+        return serializer.loads(token)
+    except Exception as exp:
+        logging.error(f"Error Occurred: {exp}")
+        print("Error occurred: {}".format(exp))
+        
+        return None
     

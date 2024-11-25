@@ -1,6 +1,7 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
+    domain_name:str
     DATABASE_URL :str 
     database_hostname: str
     database_port: str
@@ -9,6 +10,7 @@ class Settings(BaseSettings):
     database_password: str
     jwt_secret_key: str
     jwt_algorithm: str
+    salt: str = "book-review-api-secret"
     access_token_expire_minutes: int
     refresh_token_expire_minutes: int
     redis_host: str = "localhost"

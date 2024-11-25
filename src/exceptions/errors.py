@@ -15,26 +15,11 @@ class BaseExceptionClass(Exception):
 class InvalidToken(BaseExceptionClass):
     """Invalid or expired token provided."""
     pass
-    # HTTPException(
-    #             status_code=status.HTTP_403_FORBIDDEN, 
-    #             detail={
-    #                 "status_code":status.HTTP_403_FORBIDDEN,
-    #                 "error":"Token is invalid or expired",
-    #                 "resolution":"Please create a new token"
-    #             }
-    #         )
+
 
 class RevokedToken(BaseExceptionClass):
     """Revoked token provided."""
     pass
-    # HTTPException(
-    #             status_code=status.HTTP_403_FORBIDDEN, 
-    #             detail={
-    #                 "status_code":status.HTTP_403_FORBIDDEN,
-    #                 "error":"Token is either revoked or invalid",
-    #                 "resolution":"Please create a new token"
-    #                 }
-    #             )
 
 
 
@@ -42,38 +27,31 @@ class RevokedToken(BaseExceptionClass):
 class AccessTokenRequired(BaseExceptionClass):
     """Refresh token was provided instead of access token."""
     pass    
-    # raise HTTPException(
-            #     status_code=status.HTTP_403_FORBIDDEN, 
-            #     detail={
-            #         "status_code":status.HTTP_403_FORBIDDEN,
-            #         "error":"Please provide a valid access_token"
-            #         }
-            # )
 
 
 class RefreshTokenRequired(BaseExceptionClass):
     """Access token was provided instead of refresh token."""
     pass    
-    #HTTPException(
-        #         status_code=status.HTTP_403_FORBIDDEN, 
-        #         detail={
-        #             "status_code":status.HTTP_403_FORBIDDEN,
-        #             "error":"Please provide a valid refresh_token"
-        #             }
-        #     )
 
+
+class InvalidVerificationUrl(BaseExceptionClass):
+    """Invalid email verification url used."""
+    pass
 
 class UserAlreadyExists(BaseExceptionClass):
     """User record is already exists"""
     pass 
-#HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User already exists")
+
+
+class UserEmailAlreadyVerified(BaseExceptionClass):
+    """User email already verified."""
+    pass 
 
 
 
 class UserEmailAlreadyExists(BaseExceptionClass):
     """User has provided an existing email address at sign up."""
     pass 
-    #HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Email already registered")
        
 
 
@@ -82,7 +60,6 @@ class UserEmailAlreadyExists(BaseExceptionClass):
 class UserPhoneNumberAlreadyExists(BaseExceptionClass):
     """User has provided an existing phone number at sign up."""
     pass 
-    #HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Phone number already registered")
     
 
 
@@ -91,7 +68,6 @@ class UserPhoneNumberAlreadyExists(BaseExceptionClass):
 class UsernameAlreadyExists(BaseExceptionClass):
     """User has provided an existing username at sign up."""
     pass
-    #HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Username already registered")
 
 
 
@@ -99,15 +75,6 @@ class UsernameAlreadyExists(BaseExceptionClass):
 class InsufficientPermission(BaseExceptionClass):
     """User does not have sufficient permissions to perform the requested action."""
     pass
-# HTTPException(
-#             status_code=status.HTTP_403_FORBIDDEN,
-#             detail={
-#                 "status_code": status.HTTP_403_FORBIDDEN,
-#                 "error":"Access denied",
-#                 "message":"You are not permitted to perform this action."
-#             }
-#         )
-
 
 
 
@@ -120,7 +87,6 @@ class SpecifiedResourceNotFound(BaseExceptionClass):
 class BookNotFound(BaseExceptionClass):
     """Book not found."""
     pass
-#HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"The specified book with {book_uid} not found.")
 
 
 
@@ -143,7 +109,6 @@ class UserNotFound(BaseExceptionClass):
 class InvalidUserCredentials(BaseExceptionClass):
     """Invalid user credentials provided at log in."""
     pass
-    #HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid credentials")
 
 class NotFound(BaseExceptionClass):
     """Resource not found."""
@@ -165,12 +130,6 @@ class InvalidReviewData(BaseExceptionClass):
 class NewResourceServerError(BaseExceptionClass):
     """Internal server error occurred while creating a new resource."""
     pass
-    # HTTPException(status_code=500, detail={
-    #     "status_code": status.HTTP_500,
-    #     "error":"An error occurred while creating new resource"
-    #     }
-    #     )
-
 
 
 
@@ -211,6 +170,22 @@ def register_all_errors(app: FastAPI):
             }
         )
     )
+
+
+
+def register_all_errors(app: FastAPI):
+    app.add_exception_handler(
+        UserEmailAlreadyVerified,
+        create_exception_handler(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "status_code": status.HTTP_409_CONFLICT,
+                "message": "User email already verified",
+                "error_code": "USER_VEIRIFIED"
+            }
+        )
+    )
+
 
 
     app.add_exception_handler(
@@ -282,6 +257,20 @@ def register_all_errors(app: FastAPI):
                 "message": "Token is invalid Or expired",
                 "resolution": "Please create a new token",
                 "error_code": "INVALID_TOKEN",
+            },
+        ),
+    )
+
+
+    app.add_exception_handler(
+        InvalidVerificationUrl,
+        create_exception_handler(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "status": status.HTTP_401_UNAUTHORIZED,
+                "message": "Invalid Verification URL used",
+                "resolution": "Request for new verification url.",
+                "error_code": "INVALID_VERIFY_URL",
             },
         ),
     )
