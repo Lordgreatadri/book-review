@@ -180,7 +180,7 @@ def register_all_errors(app: FastAPI):
             status_code=status.HTTP_409_CONFLICT,
             detail={
                 "status_code": status.HTTP_409_CONFLICT,
-                "message": "User email already verified",
+                "message": "User email already verified. Please, you can login into your account.",
                 "error_code": "USER_VEIRIFIED"
             }
         )
@@ -268,7 +268,7 @@ def register_all_errors(app: FastAPI):
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={
                 "status": status.HTTP_401_UNAUTHORIZED,
-                "message": "Invalid Verification URL used",
+                "message": "Invalid Verification URL Used",
                 "resolution": "Request for new verification url.",
                 "error_code": "INVALID_VERIFY_URL",
             },

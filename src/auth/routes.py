@@ -55,18 +55,18 @@ async def create_user(user: CreateUserModel, session:AsyncSession = Depends(get_
 
     if new_user:
         token = create_url_safe_token({"uuid": new_user.uid, "email": new_user.email, "username": new_user.username})
-        # verify_url = f"http://{Config.domain_name}/api/v1/auth/verify/{token}"
-        # email_message = f"""
-        #     <h1>Verify Your eEmail</h1>
-        #     <p>Please click <a href="{verify_url}">HERE</a> to verify your email</p>
-        # """
+        verify_url = f"http://{Config.domain_name}/api/v1/auth/verify/{token}"
+        email_message = f"""
+            <h1>Verify Your Email</h1>
+            <p>Please click <a href="{verify_url}">HERE</a> to verify your email</p>
+        """
         
-        # message = create_message(
-        #     recipients=[user.email],
-        #     subject="Verify Your Email",
-        #     body=email_message,
-        # )
-        # await mail.send_message(message)
+        message = create_message(
+            recipients=[user.email],
+            subject="Verify Your Email",
+            body=email_message,
+        )
+        await mail.send_message(message)
         # print(token)
         return JSONResponse(
             status_code= status.HTTP_201_CREATED,
@@ -144,6 +144,43 @@ async def verify_email(token: str, session: AsyncSession = Depends(get_session))
         }
     )
 
+
+
+
+@auth_router.post('/resend_email_verification', status_code=status.HTTP_200_OK)
+async def resend_email_verification(email: str, session: AsyncSession = Depends(get_session)):
+    user = await user_service.get_user_by_email(email, session)
+    
+    if not user:
+        raise UserNotFound()
+    
+    if user.is_verified :
+        raise UserEmailAlreadyVerified()
+    
+    token = create_url_safe_token({"uuid": user.uid, "email": user.email, "username": user.username})
+    verify_url = f"http://{Config.domain_name}/api/v1/auth/verify/{token}"
+    email_message = f"""
+        <h1>Verify Your Email</h1>
+        <p>We have noticed that you you requested an email verification link.</p>
+        <p>Please click <a href="{verify_url}">HERE</a> to verify your email</p>
+        <p>Please, if you did not make this request, kindly ignore this email. Thank you!</p>
+    """
+    
+    message = create_message(
+        recipients=[user.email],
+        subject="Verify Your Email",
+        body=email_message,
+    )
+
+    await mail.send_message(message)
+    
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "status_code": status.HTTP_200_OK,
+            "message": "Email verification link has been sent successfully to your registered email address."
+        }
+    )
 
 
 
