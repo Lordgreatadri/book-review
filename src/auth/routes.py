@@ -4,15 +4,16 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from fastapi.responses import JSONResponse
-from .schemas import CreateUserModel, EmailModel, UserModel,UserLoginModel, UserBooksModel
+from .schemas import CreateUserModel, EmailModel, PasswordResetModel, UserModel,UserLoginModel, UserBooksModel, PasswordResetRequestModel
 from src.db.main import get_session
 from .services import UserService
-from .utils import create_access_token, create_url_safe_token, decode_url_safe_token
+from .utils import create_access_token, create_url_safe_token, decode_url_safe_token, hash_password
 from datetime import timedelta, datetime
 from src.config import Config
 from .dependencies import RefereshTokenBearer, AccessTokenBearer, get_current_user, RoleChecker
 from src.db.redis import add_jti_to_blocklist
 from src.exceptions.errors import (
+    PasswordsMismatch,
     UserPhoneNumberAlreadyExists,
     UserEmailAlreadyVerified,
     UserEmailAlreadyExists,
@@ -50,6 +51,8 @@ async def create_user(user: CreateUserModel, session:AsyncSession = Depends(get_
     if await user_service.get_user_by_phone_number(user.phone_number, session):
         raise UserPhoneNumberAlreadyExists()
     
+    if user.password != user.password_confirmation:
+        raise PasswordsMismtach()
 
     new_user = await user_service.create_user(user, session)
 
@@ -303,3 +306,75 @@ async def send_mail(email:EmailModel):
 
     
 
+
+
+@auth_router.post('/reset-password')
+async def password_reset(email_data:PasswordResetRequestModel, session:AsyncSession = Depends(get_session)):
+    user = await user_service.get_user_by_email(email_data.email, session)
+    if not user:
+        raise UserNotFound()
+    
+
+    token = create_url_safe_token({"uuid": str(user.uid), "email": user.email, "username": user.username})
+    reset_url = f"http://{Config.domain_name}/api/v1/auth/password-reset-confirm/{token}"
+    email_message = f"""
+            <h1>Password Reset Link</h1>
+            <p>We noticed you make a request to reset your password.</p>
+            <p>Please click <a href="{reset_url}">HERE</a> reset your password</p>
+            <p>Please, if you did not make this request, kindly ignore this email. Thank you!</p>
+        """
+        
+    # message = create_message(
+    #     recipients=[user.email],
+    #     subject="Password Reset Link",
+    #     body=email_message,
+    # )
+    # await mail.send_message(message)
+    print(reset_url)
+    return JSONResponse(
+        status_code= status.HTTP_200_OK,
+        content={
+            "status_code": status.HTTP_200_OK,
+            "message": "Request processed successfully, please check email for the instruction to reset your password."
+        }
+    )
+
+
+
+
+
+@auth_router.post('/password-reset-confirm/{token}')
+async def new_password_reset(token: str, password_data: PasswordResetModel, session:AsyncSession = Depends(get_session)):
+
+    if not password_data.new_password == password_data.confirm_password:
+        raise PasswordsMismatch()
+    
+
+    token_data = decode_url_safe_token(token)
+    
+    if not token_data:
+        raise InvalidVerificationUrl()
+
+    email = token_data.get("email")
+
+    if not email:
+        raise InvalidVerificationUrl()
+    
+    user = await user_service.get_user_by_email(email, session)
+    
+    if not user:
+        raise UserNotFound()
+    
+
+    user_data = {
+        "password": hash_password(password_data.new_password)
+    }
+    await user_service.update_user(email, user_data, session)
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "status_code": status.HTTP_200_OK,
+            "message": "Password reset successful."
+        }
+    )

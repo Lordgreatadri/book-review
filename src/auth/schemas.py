@@ -30,6 +30,7 @@ class CreateUserModel(BaseModel):
     first_name: str
     last_name: str
     password: str = Field(min_length=6)
+    password_confirmation: str = Field(min_length=6)
 
 class UserLoginModel(BaseModel):
     username: str
@@ -38,3 +39,19 @@ class UserLoginModel(BaseModel):
 
 class EmailModel(BaseModel):
     email_addresses: List[str]
+
+
+
+class PasswordResetRequestModel(BaseModel):
+    email:str  
+
+
+class PasswordResetModel(BaseModel):
+    new_password:str = Field(min_length=6)
+    confirm_password:str = Field(min_length=6)
+
+
+
+
+    
+      

@@ -136,6 +136,10 @@ class NewResourceServerError(BaseExceptionClass):
 
 
 
+class PasswordsMismatch(BaseExceptionClass):
+    """Passwords are not the same."""
+    pass
+
 
 
 def create_exception_handler(status_code: int, detail:Any)->Callable[[Request, Exception], JSONResponse]:
@@ -157,6 +161,9 @@ def create_exception_handler(status_code: int, detail:Any)->Callable[[Request, E
         # )
 
     return exception_handler
+
+
+
 
 
 
@@ -203,6 +210,18 @@ def register_all_errors(app: FastAPI):
         )
     )
 
+
+    app.add_exception_handler(
+        PasswordsMismatch,
+        create_exception_handler(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "status_code": status.HTTP_422_UNPROCESSABLE_ENTITY,
+                "message": "User passwords mismatch",
+                "error_code": "PASSWORD_MISMATCH"
+            }
+        )
+    )
 
     app.add_exception_handler(
         UserAccountNotVerified,
