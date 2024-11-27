@@ -55,6 +55,9 @@ class UserEmailAlreadyExists(BaseExceptionClass):
        
 
 
+class UserAccountNotVerified(BaseExceptionClass):
+    """User account not verified."""
+    pass
 
 
 class UserPhoneNumberAlreadyExists(BaseExceptionClass):
@@ -199,6 +202,21 @@ def register_all_errors(app: FastAPI):
             }
         )
     )
+
+
+    app.add_exception_handler(
+        UserAccountNotVerified,
+        create_exception_handler(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "status_code": status.HTTP_403_FORBIDDEN,
+                "message": "User account is not yet verified",
+                "resolution": "Check your email for verification details or request a new account verification link.",
+                "error_code": "USER_ACCOUNT_NOT_VERIFIED"
+            }
+        )
+    )
+    
 
     app.add_exception_handler(
         UserPhoneNumberAlreadyExists,

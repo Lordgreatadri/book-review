@@ -5,12 +5,13 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from .utils import decode_access_token
 from src.db.redis import token_in_blocklist
 from src.exceptions.errors import (
+    UserAccountNotVerified,
     InsufficientPermission,
     RefreshTokenRequired,
     AccessTokenRequired,
     InvalidToken,
     RevokedToken,
-    RevokedToken
+    RevokedToken,
 ) 
 from src.db.main import get_session
 from . services import UserService
@@ -95,7 +96,9 @@ class RoleChecker():
 
 
     def __call__(self, current_user:User =Depends(get_current_user)):
-        print(self.allowed_roles)
+        if not current_user.is_verified:
+            raise UserAccountNotVerified()
+        
         if current_user.role in self.allowed_roles:
             return True 
         
