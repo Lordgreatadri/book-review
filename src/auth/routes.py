@@ -1,7 +1,6 @@
 import smtplib
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlmodel import Session
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio.session import AsyncSession
 from fastapi.responses import JSONResponse
 from .schemas import CreateUserModel, EmailModel, PasswordResetModel, UserModel,UserLoginModel, UserBooksModel, PasswordResetRequestModel
@@ -34,7 +33,7 @@ user_service = UserService()
 role_checker = RoleChecker(Config.roles)
 
 @auth_router.post("/register", status_code=status.HTTP_201_CREATED)
-async def create_user(user: CreateUserModel, session:AsyncSession = Depends(get_session)):
+async def create_user(user: CreateUserModel, bg_tasks:BackgroundTasks, session:AsyncSession = Depends(get_session)):
     if await user_service.user_exists(user.email, user.username, session=session):
         raise UserAlreadyExists()
     
@@ -52,7 +51,7 @@ async def create_user(user: CreateUserModel, session:AsyncSession = Depends(get_
         raise UserPhoneNumberAlreadyExists()
     
     if user.password != user.password_confirmation:
-        raise PasswordsMismtach()
+        raise PasswordsMismatch()
 
     new_user = await user_service.create_user(user, session)
 
@@ -69,7 +68,10 @@ async def create_user(user: CreateUserModel, session:AsyncSession = Depends(get_
             subject="Verify Your Email",
             body=email_message,
         )
-        await mail.send_message(message)
+
+        #let background tasks do the sending of the email
+        bg_tasks.add_task( mail.send_message, message)
+
         # print(token)
         return JSONResponse(
             status_code= status.HTTP_201_CREATED,
@@ -151,7 +153,7 @@ async def verify_email(token: str, session: AsyncSession = Depends(get_session))
 
 
 @auth_router.post('/resend_email_verification', status_code=status.HTTP_200_OK)
-async def resend_email_verification(email: str, session: AsyncSession = Depends(get_session)):
+async def resend_email_verification(email: str, bg_tasks:BackgroundTasks, session: AsyncSession = Depends(get_session)):
     user = await user_service.get_user_by_email(email, session)
     
     if not user:
@@ -175,7 +177,8 @@ async def resend_email_verification(email: str, session: AsyncSession = Depends(
         body=email_message,
     )
 
-    await mail.send_message(message)
+    #let background tasks do the sending of the email
+    bg_tasks(mail.send_message, message)
     
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -309,7 +312,7 @@ async def send_mail(email:EmailModel):
 
 
 @auth_router.post('/reset-password')
-async def password_reset(email_data:PasswordResetRequestModel, session:AsyncSession = Depends(get_session)):
+async def password_reset(email_data:PasswordResetRequestModel, bg_tasks: BackgroundTasks, session:AsyncSession = Depends(get_session)):
     user = await user_service.get_user_by_email(email_data.email, session)
     if not user:
         raise UserNotFound()
@@ -324,12 +327,15 @@ async def password_reset(email_data:PasswordResetRequestModel, session:AsyncSess
             <p>Please, if you did not make this request, kindly ignore this email. Thank you!</p>
         """
         
-    # message = create_message(
-    #     recipients=[user.email],
-    #     subject="Password Reset Link",
-    #     body=email_message,
-    # )
-    # await mail.send_message(message)
+    message = create_message(
+        recipients=[user.email],
+        subject="Password Reset Link",
+        body=email_message,
+    )
+
+    # let the background tasks do the email sending
+    bg_tasks(mail.send_message, message)
+
     print(reset_url)
     return JSONResponse(
         status_code= status.HTTP_200_OK,
