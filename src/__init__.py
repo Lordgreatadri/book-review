@@ -31,11 +31,32 @@ async def life_span(app: FastAPI):
         print("Closing server...")   
 
 version = "v1"
+api_prefix =f"/api/{version}"
+description = """
+A REST API for book review web service.
+
+This REST API enable you to:
+- Create a user account, Receive account verification email, Resend verification email, Request reset password link via email, Reset password.
+- Create, Read, Update, And Delete Books
+- Add Reviews To Books
+- Add Tags To Books e.t.c.
+    """
+
 app = FastAPI(
     title="Book Review",
-    description="A REST API for book review web service",
+    description=description,
     version = version,
-    # lifespan=life_span
+    license_info={"name": "MIT License", "url": "https://opensource.org/license/mit"},
+    contact={
+        "name": "Emmanuel Lordgreat-Adri",
+        "url": "https://github.com/Lordgreatadri",
+        "email":"lodgreatadri@gmail.com",
+    },
+    openapi_url=f"{api_prefix}/openapi.json",
+    docs_url=f"{api_prefix}/docs",
+    redoc_url=f"{api_prefix}/redoc",
+    # terms_of_service="overhere",
+    # lifespan=life_span,
 )
 
 
@@ -59,8 +80,8 @@ register_all_errors(app)
 
 register_middleware(app)
 
-app.include_router(auth_router, prefix=f"/api/{version}/auth", tags=["Authentication"])
-app.include_router(book_router, prefix=f"/api/{version}/books", tags=["Books"])
-app.include_router(review_router, prefix=f"/api/{version}/reviews", tags=["Reviews"])
-app.include_router(tags_router, prefix=f"/api/{version}/tags", tags=["Tags"])
+app.include_router(auth_router, prefix=f"{api_prefix}/auth", tags=["Authentication"])
+app.include_router(book_router, prefix=f"{api_prefix}/books", tags=["Books"])
+app.include_router(review_router, prefix=f"{api_prefix}/reviews", tags=["Reviews"])
+app.include_router(tags_router, prefix=f"{api_prefix}/tags", tags=["Tags"])
 
