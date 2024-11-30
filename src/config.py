@@ -1,5 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
+from celery import Celery
 class Settings(BaseSettings):
     domain_name:str
     DATABASE_URL :str 
@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     refresh_token_expire_minutes: int
     redis_host: str = "localhost"
     redis_port: int = 6379,
+    redis_url: str = "redis://localhost:6379/0"
     jti_expiry: int = 3000
     roles:list[str]
     allowed_hosts:list[str]
@@ -38,3 +39,9 @@ class Settings(BaseSettings):
 
 
 Config = Settings()
+
+# setup Celery
+# you can also use RabbitMQ
+broker_url = Config.redis_url
+result_backend = Config.redis_url
+broker_connection_retry_on_startup = True

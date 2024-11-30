@@ -25,7 +25,8 @@ from src.exceptions.errors import (
     UserNotFound
 ) 
 
-from src.mails.mail import mail, create_message
+# from src.mails.mail import mail, create_message
+from src.celery_tasks import send_email
 
 
 auth_router = APIRouter()
@@ -63,14 +64,16 @@ async def create_user(user: CreateUserModel, bg_tasks:BackgroundTasks, session:A
             <p>Please click <a href="{verify_url}">HERE</a> to verify your email</p>
         """
         
-        message = create_message(
-            recipients=[user.email],
-            subject="Verify Your Email",
-            body=email_message,
-        )
+        # message = create_message(
+        #     recipients=[user.email],
+        #     subject="Verify Your Email",
+        #     body=email_message,
+        # )
 
-        #let background tasks do the sending of the email
-        bg_tasks.add_task( mail.send_message, message)
+        # #let background tasks do the sending of the email
+        # bg_tasks.add_task( mail.send_message, message)
+
+        send_email.delay(recipients=[user.email], subject="Verify Your Email", body=email_message)
 
         # print(token)
         return JSONResponse(
@@ -171,14 +174,16 @@ async def resend_email_verification(email: str, bg_tasks:BackgroundTasks, sessio
         <p>Please, if you did not make this request, kindly ignore this email. Thank you!</p>
     """
     
-    message = create_message(
-        recipients=[user.email],
-        subject="Verify Your Email",
-        body=email_message,
-    )
+    # message = create_message(
+    #     recipients=[user.email],
+    #     subject="Verify Your Email",
+    #     body=email_message,
+    # )
 
-    #let background tasks do the sending of the email
-    bg_tasks(mail.send_message, message)
+    # #let background tasks do the sending of the email
+    # bg_tasks(mail.send_message, message)
+
+    send_email.delay(recipients=[user.email], subject="Verify Your Email", body=email_message)
     
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -292,13 +297,15 @@ async def send_mail(email:EmailModel):
         html = "<h1>Welcome to the app</h1>"
         subject = "Welcome to our site!"
 
-        message = create_message(
-            recipients= emails,
-            subject= subject,
-            body= html
-        )
+        # message = create_message(
+        #     recipients= emails,
+        #     subject= subject,
+        #     body= html
+        # )
 
-        await mail.send_message(message)
+        # await mail.send_message(message)
+
+        send_email.delay(recipients=emails, subject=subject, body=html)
 
         return {"message": "Email sent successfully"} 
 
@@ -327,14 +334,17 @@ async def password_reset(email_data:PasswordResetRequestModel, bg_tasks: Backgro
             <p>Please, if you did not make this request, kindly ignore this email. Thank you!</p>
         """
         
-    message = create_message(
-        recipients=[user.email],
-        subject="Password Reset Link",
-        body=email_message,
-    )
+    # message = create_message(
+    #     recipients=[user.email],
+    #     subject="Password Reset Link",
+    #     body=email_message,
+    # )
 
-    # let the background tasks do the email sending
-    bg_tasks(mail.send_message, message)
+    # # let the background tasks do the email sending
+    # bg_tasks(mail.send_message, message)
+
+    send_email.delay(recipients=[user.email], subject="Password Reset Link", body=email_message)
+    
 
     print(reset_url)
     return JSONResponse(
