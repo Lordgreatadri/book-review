@@ -23,7 +23,7 @@ def test_create_book(fake_session, fake_book_service, test_client):
 def test_get_all_books(fake_session, fake_book_service, test_client):
     response = test_client.get(f"{book_prefix}/books")
 
-    # assert fake_book_service.get_all_books_called_once()
+    assert fake_book_service.get_all_books_called_once()
     assert fake_book_service.get_all_books_called_once_with(fake_session)
 
 

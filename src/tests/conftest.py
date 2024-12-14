@@ -13,6 +13,7 @@ import uuid
 mock_session = Mock()
 mock_user_service = Mock()
 mock_book_service = Mock()
+mock_review_service = Mock()
 
 
 def get_mock_session():
@@ -50,14 +51,18 @@ def fake_book_service():
 
 
 @pytest.fixture
+def fake_review_service():
+    return mock_review_service
+
+
+@pytest.fixture
 def test_book():
     return Book(
         uid=uuid.uuid4(),
         user_uid=uuid.uuid4(),
         title="sample title",
-        description="sample description",
+        publishe="Mr. Publisher",
         page_count=200,
-        language="English",
         published_date=datetime.now(),
         update_at=datetime.now()
     )
