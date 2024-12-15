@@ -1,8 +1,9 @@
+from typing import List
 from fastapi.testclient import TestClient
 from src.auth.dependencies import AccessTokenBearer, RefereshTokenBearer, RoleChecker
 from src.db.main import get_session
 from unittest.mock import Mock
-from src.db.models import Book
+from src.db.models import Book, Tag
 from datetime import datetime
 from src import app
 import pytest
@@ -14,6 +15,7 @@ mock_session = Mock()
 mock_user_service = Mock()
 mock_book_service = Mock()
 mock_review_service = Mock()
+mock_tag_service = Mock()
 
 
 def get_mock_session():
@@ -56,6 +58,10 @@ def fake_review_service():
 
 
 @pytest.fixture
+def fake_tag_service():
+    return mock_tag_service
+
+@pytest.fixture
 def test_book():
     return Book(
         uid=uuid.uuid4(),
@@ -65,6 +71,15 @@ def test_book():
         page_count=200,
         published_date=datetime.now(),
         update_at=datetime.now()
+    )
+
+@pytest.fixture
+def test_tag():
+    return Tag(
+        uid=uuid.uuid4(),
+        name= "Python",
+        created_at=datetime.now(),
+        # books= List[test_book]
     )
 
 
